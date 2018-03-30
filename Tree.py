@@ -87,6 +87,82 @@ class GenericTree(object):
 
         raise StopIteration
 
+    def to_layers(self):
+
+        layers = []
+        current_layer = 0
+
+        for node_index in self.iter_nodes2(0):
+            if node_index != -1:
+                if len(layers) < current_layer + 1:
+                    layers.append([])
+                layers[current_layer].append(node_index)
+                current_layer += 1
+            else:
+                current_layer -= 1
+
+        return layers
+
+    def weigths(self):
+
+        def process_node(index, result):
+            sum = 1
+            for child in self.nodes[index].children:
+                sum += process_node(child, result)
+            result[index] = sum
+            return sum
+
+        result = [0 for i in range(len(self.nodes))]
+
+        process_node(0, result)
+
+        return result
+
+    def widths(self):
+
+        def process_node(index, result):
+            self_width = len(self.nodes[index].children)
+            width = 0
+            for child in self.nodes[index].children:
+                width += process_node(child, result)
+            if width == 0:
+                width = 1
+            res = self_width if self_width >= width else width
+            result[index] = res
+            return res
+
+        result = [0 for i in range(len(self.nodes))]
+
+        process_node(0, result)
+
+        return result
+
+    def positions(self):
+        layers = self.to_layers()
+        widths = self.widths()
+        result = [0 for i in range(len(self.nodes))]
+
+        result[0] = widths[0] / 2
+
+        for layer in layers:
+            for node_index in layer:
+                node_pos = result[node_index]
+                node_width = widths[node_index]
+                leading_pos = node_pos - node_width / 2
+                for child in self.nodes[node_index].children:
+                    child_pos =  leading_pos + widths[child] / 2
+                    leading_pos += widths[child]
+                    result[child] = child_pos
+        return result
+
+
+def change_str_at_index(s, i, ch):
+    s_start = s[:i]
+    s_end = s[i:]
+    return s_start + ch + s_end
+
+
+
 def main():
 
     def f(something):
@@ -99,20 +175,43 @@ def main():
     tree.add_root(root)
     tree.add_node(Node('ch1'), 0)
     tree.add_node(Node('ch2'), 0)
-    tree.add_node(Node('ch3'), 1)
+    tree.add_node(Node('ch3'), 0)
     tree.add_node(Node('ch4'), 1)
-    tree.add_node(Node('ch5'), 2)
-    tree.add_node(Node('ch6'), 2)
+    tree.add_node(Node('ch5'), 1)
+    tree.add_node(Node('ch6'), 1)
     tree.add_node(Node('ch7'), 2)
+    tree.add_node(Node('ch8'), 2)
+    tree.add_node(Node('ch9'), 2)
+    tree.add_node(Node('ch7'), 3)
     tree.add_node(Node('ch8'), 3)
+    tree.add_node(Node('ch9'), 3)
+    # tree.add_node(Node('ch10'), 2)
 
     tree.process_nodes(f)
     print()
     g = tree.iter_nodes2(0)
 
+
+
     for node in g:
         if node != -1:
             print(tree.nodes[node])
+
+    layers = tree.to_layers()
+    widths = tree.widths()
+    positions = tree.positions()
+    print(widths)
+    print(positions)
+    # strlength = widths[0] * 5
+    # strcount = len(layers)
+    #
+    # for i in range(strcount):
+    #     layerstr = ' ' * strlength
+    #     layer =  layers[i]
+    #     for node_index in layer:
+    #         node_pos = positions[node_index]
+    #         layerstr = change_str_at_index(layerstr, node_pos, str(node_index))
+    #     print(layerstr)
 
 
 if __name__ == '__main__':
